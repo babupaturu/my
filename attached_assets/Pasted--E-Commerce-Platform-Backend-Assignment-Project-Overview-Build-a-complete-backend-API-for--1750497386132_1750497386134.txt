@@ -1,0 +1,463 @@
+# E-Commerce Platform - Backend Assignment
+
+## Project Overview
+Build a complete backend API for an e-commerce platform similar to Amazon. This system should handle user accounts, product catalog, shopping cart, orders, payments, and product reviews.
+
+## Technical Requirements
+- **Backend Framework**: Node.js with Express.js
+- **Database**: SQLite for development (with proper schema design)
+- **Authentication**: JWT tokens
+- **API Documentation**: Clear endpoint documentation
+- **Error Handling**: Proper error responses with appropriate HTTP status codes
+- **Validation**: Input validation for all endpoints
+
+## Database Design Requirements
+
+### Entities to Model
+You need to design a database schema that includes the following entities:
+
+1. **Users**
+   - Customer information for registration and login
+   - Shipping addresses (users can have multiple addresses)
+   - Consider roles (customer, seller, admin)
+
+2. **Sellers**
+   - Seller/vendor information
+   - Business details
+   - Relationship with products
+
+3. **Categories**
+   - Product categories and subcategories
+   - Hierarchical structure (Electronics > Mobile Phones > Smartphones)
+
+4. **Products**
+   - Product details (name, description, price, etc.)
+   - Stock quantity
+   - Multiple images
+   - Product variations (size, color)
+   - Which seller owns the product
+
+5. **Shopping Cart**
+   - Cart items for each user
+   - Quantity of each item
+   - Handle cart persistence
+
+6. **Orders**
+   - Order information and status
+   - Shipping address
+   - Order total
+   - Order status tracking
+
+7. **Order Items**
+   - Individual items within an order
+   - Price at time of purchase
+   - Quantity ordered
+
+8. **Payments**
+   - Payment information
+   - Payment methods
+   - Transaction status
+
+9. **Reviews**
+   - Product reviews and ratings
+   - User who wrote the review
+   - Rating (1-5 stars)
+
+10. **Wishlist** (Optional)
+    - User's saved products
+
+### Design Considerations
+- **Relationships**: Ensure proper relationships between entities
+- **Constraints**: Add appropriate constraints to maintain data integrity
+- **Indexes**: Consider which fields need indexes for performance
+- **Stock Management**: Track available quantity and prevent overselling
+- **Price History**: Consider storing price at time of order
+- **Data Types**: Choose appropriate data types for each field
+- **Image Storage**: Plan how to store product image URLs
+
+## API Endpoints
+
+### 1. Authentication APIs
+
+#### POST /api/auth/register
+Register a new user
+```json
+Request Body:
+{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "securePassword123",
+    "phone": "+1234567890"
+}
+
+Response:
+{
+    "success": true,
+    "message": "User registered successfully",
+    "userId": 1
+}
+```
+
+#### POST /api/auth/login
+User login
+```json
+Request Body:
+{
+    "email": "john@example.com",
+    "password": "securePassword123"
+}
+
+Response:
+{
+    "success": true,
+    "token": "jwt_token_here",
+    "user": {
+        "id": 1,
+        "name": "John Doe",
+        "email": "john@example.com"
+    }
+}
+```
+
+#### POST /api/auth/logout
+Logout user (requires authentication)
+
+#### GET /api/auth/profile
+Get user profile (requires authentication)
+
+#### PUT /api/auth/profile
+Update user profile (requires authentication)
+
+### 2. Product APIs
+
+#### GET /api/products
+Get all products with pagination
+```
+Query Parameters:
+- page: Page number (default: 1)
+- limit: Items per page (default: 20)
+- category: Filter by category
+- minPrice: Minimum price
+- maxPrice: Maximum price
+- search: Search in product name/description
+- sortBy: price_asc, price_desc, rating, newest
+
+Response:
+{
+    "success": true,
+    "page": 1,
+    "totalPages": 10,
+    "totalProducts": 200,
+    "products": [
+        {
+            "id": 1,
+            "name": "iPhone 15",
+            "description": "Latest iPhone model",
+            "price": 999.99,
+            "category": "Electronics",
+            "seller": "Apple Store",
+            "rating": 4.5,
+            "reviewCount": 150,
+            "stock": 50,
+            "images": ["url1", "url2"]
+        }
+    ]
+}
+```
+
+#### GET /api/products/:id
+Get single product details
+```json
+Response:
+{
+    "success": true,
+    "product": {
+        "id": 1,
+        "name": "iPhone 15",
+        "description": "Latest iPhone model with A17 Pro chip",
+        "price": 999.99,
+        "category": "Electronics",
+        "subcategory": "Smartphones",
+        "seller": {
+            "id": 1,
+            "name": "Apple Store",
+            "rating": 4.8
+        },
+        "rating": 4.5,
+        "reviewCount": 150,
+        "stock": 50,
+        "images": ["url1", "url2", "url3"],
+        "specifications": {
+            "brand": "Apple",
+            "model": "iPhone 15",
+            "color": "Black",
+            "storage": "128GB"
+        }
+    }
+}
+```
+
+#### GET /api/categories
+Get all categories with hierarchy
+
+### 3. Cart APIs
+
+#### POST /api/cart/add
+Add item to cart (requires authentication)
+```json
+Request Body:
+{
+    "productId": 1,
+    "quantity": 2
+}
+
+Response:
+{
+    "success": true,
+    "message": "Item added to cart",
+    "cartTotal": 1999.98
+}
+```
+
+#### GET /api/cart
+Get user's cart (requires authentication)
+
+#### PUT /api/cart/update/:itemId
+Update cart item quantity (requires authentication)
+
+#### DELETE /api/cart/remove/:itemId
+Remove item from cart (requires authentication)
+
+#### DELETE /api/cart/clear
+Clear entire cart (requires authentication)
+
+### 4. Order APIs
+
+#### POST /api/orders/create
+Create order from cart (requires authentication)
+```json
+Request Body:
+{
+    "shippingAddress": {
+        "fullName": "John Doe",
+        "phone": "+1234567890",
+        "addressLine1": "123 Main St",
+        "addressLine2": "Apt 4B",
+        "city": "New York",
+        "state": "NY",
+        "zipCode": "10001",
+        "country": "USA"
+    },
+    "paymentMethod": "card"
+}
+
+Response:
+{
+    "success": true,
+    "orderId": "ORD123456",
+    "totalAmount": 1999.98,
+    "status": "pending_payment"
+}
+```
+
+#### GET /api/orders
+Get user's order history (requires authentication)
+
+#### GET /api/orders/:orderId
+Get order details (requires authentication)
+
+#### PUT /api/orders/:orderId/cancel
+Cancel an order (requires authentication)
+
+### 5. Payment APIs
+
+#### POST /api/payments/process
+Process payment for an order
+```json
+Request Body:
+{
+    "orderId": "ORD123456",
+    "paymentDetails": {
+        "method": "card",
+        "cardNumber": "4111111111111111",
+        "expiryMonth": "12",
+        "expiryYear": "2025",
+        "cvv": "123"
+    }
+}
+
+Response:
+{
+    "success": true,
+    "transactionId": "TXN789456",
+    "message": "Payment successful"
+}
+```
+
+### 6. Review APIs
+
+#### POST /api/reviews/create
+Add a product review (requires authentication)
+```json
+Request Body:
+{
+    "productId": 1,
+    "rating": 5,
+    "title": "Excellent product!",
+    "comment": "Very satisfied with the quality and performance"
+}
+```
+
+#### GET /api/reviews/product/:productId
+Get reviews for a product
+
+### 7. Address APIs
+
+#### POST /api/addresses
+Add a new address (requires authentication)
+
+#### GET /api/addresses
+Get user's saved addresses (requires authentication)
+
+#### PUT /api/addresses/:id
+Update address (requires authentication)
+
+#### DELETE /api/addresses/:id
+Delete address (requires authentication)
+
+### 8. Seller APIs (Bonus)
+
+#### POST /api/seller/register
+Register as a seller
+
+#### POST /api/seller/products
+Add a new product (seller authentication required)
+
+#### PUT /api/seller/products/:id
+Update product details
+
+#### GET /api/seller/orders
+Get orders for seller's products
+
+#### GET /api/seller/analytics
+Get sales analytics
+
+## Implementation Requirements
+
+### 1. Middleware
+- Authentication middleware using JWT
+- Request validation middleware
+- Error handling middleware
+- Logging middleware
+
+### 2. Security
+- Password hashing using bcrypt
+- Input sanitization
+- SQL injection prevention
+- Rate limiting on APIs
+
+### 3. Features to Implement
+- Shopping cart persistence (cart items should remain after logout/login)
+- Stock management (decrease stock when order placed)
+- Order status tracking
+- Product search functionality
+- Category filtering
+- Price range filtering
+- Pagination for product listings
+- Calculate order totals including taxes
+- Generate unique order IDs
+
+### 4. Error Handling
+Implement proper error responses:
+- 400 Bad Request - Invalid input
+- 401 Unauthorized - Missing/invalid token
+- 403 Forbidden - Insufficient permissions
+- 404 Not Found - Resource not found
+- 409 Conflict - Insufficient stock
+- 500 Internal Server Error
+
+## Important Considerations
+1. **Stock Management**: Ensure products cannot be ordered if out of stock
+2. **Cart Validation**: Verify product availability when creating order
+3. **Price Integrity**: Store product price at time of order
+4. **Basic Validations**: 
+   - Email format validation
+   - Required fields check
+   - Positive numbers for quantity and price
+5. **User Authorization**: Users should only access their own orders/cart
+
+## Deliverables
+1. Complete source code with proper folder structure
+2. SQLite database with:
+   - Complete schema design (CREATE TABLE statements)
+   - Seed data for testing (at least 20 products in different categories)
+   - Documentation explaining your design decisions
+3. Postman collection with all API endpoints
+4. README.md with:
+   - Setup instructions
+   - Database design explanation
+   - API documentation
+   - Assumptions made
+
+## Folder Structure
+```
+ecommerce-backend/
+├── src/
+│   ├── config/
+│   │   └── database.js
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   ├── productController.js
+│   │   ├── cartController.js
+│   │   ├── orderController.js
+│   │   ├── paymentController.js
+│   │   └── reviewController.js
+│   ├── middleware/
+│   │   ├── auth.js
+│   │   ├── validation.js
+│   │   └── errorHandler.js
+│   ├── models/
+│   │   ├── user.js
+│   │   ├── product.js
+│   │   ├── order.js
+│   │   └── ...
+│   ├── routes/
+│   │   ├── authRoutes.js
+│   │   ├── productRoutes.js
+│   │   ├── cartRoutes.js
+│   │   ├── orderRoutes.js
+│   │   └── ...
+│   ├── utils/
+│   │   ├── helpers.js
+│   │   └── constants.js
+│   └── app.js
+├── database/
+│   ├── schema.sql
+│   └── seeds.sql
+├── .env
+├── .gitignore
+├── package.json
+└── README.md
+```
+
+## Bonus Points
+- Implement product recommendations
+- Add wishlist functionality
+- Implement product variations (size, color)
+- Add inventory tracking with low stock alerts
+- Implement discount/coupon system
+- Add product image upload functionality
+- Create admin APIs for managing products/orders
+- Implement email notifications for order confirmation
+- Add product search with filters
+- Deploy the application
+
+## Submission Guidelines
+1. Push your code to a GitHub repository
+2. Include clear setup instructions in README
+3. Provide sample API requests in Postman collection
+4. Document your database design decisions
+5. Include sample data for testing
+6. Mention any assumptions made during development
+
+Good luck! This assignment will test your ability to build a scalable e-commerce backend system with proper database design and API implementation.
